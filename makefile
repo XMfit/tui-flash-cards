@@ -5,8 +5,8 @@ LIB = -lsqlite3
 # Targets
 all: flash-cards
 
-flash-cards: main.c
-			$(CC) main.c -o flashcards $(LIB)
+flash-cards: main.c db.c
+			$(CC) main.c db.c -o flashcards $(LIB)
 
 clean:
 			rm -rf flash-cards
