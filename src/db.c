@@ -1,4 +1,4 @@
-#include "db.h"
+#include "../include/db.h"
 
 void setup_database(sqlite3 **db) {
    char* err_msg = 0;
@@ -106,7 +106,7 @@ void list_decks(sqlite3* db) {
 }
 
 void create_deck(sqlite3 *db) {
-   char deck_name[NAME_BUFFER];
+   char deck_name[MAX_BUFFER];
    printf("Enter name for new deck: ");
    fgets(deck_name, sizeof(deck_name), stdin);
    to_lowercase(deck_name);
@@ -140,7 +140,7 @@ void create_deck(sqlite3 *db) {
 }
 
 void delete_deck(sqlite3* db) {
-   char deck_name[NAME_BUFFER];
+   char deck_name[MAX_BUFFER];
    printf("Enter deck to delete: ");
    fgets(deck_name, sizeof(deck_name), stdin);
    to_lowercase(deck_name);
@@ -172,8 +172,8 @@ void delete_deck(sqlite3* db) {
 }
 
 void add_card(sqlite3* db, const char* deck_name) {
-   char front[NAME_BUFFER];
-   char back[NAME_BUFFER];
+   char front[MAX_BUFFER];
+   char back[MAX_BUFFER];
 
    sqlite3_stmt* stmt;
    int deck_id = 0;

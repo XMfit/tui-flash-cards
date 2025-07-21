@@ -1,12 +1,12 @@
 # Compiler
 CC = gcc
 # Libraries
-LIB = -lsqlite3
+LIB = -lsqlite3 -lncurses -lform
 # Targets
-all: flash-cards
+all: bin/flash-cards
 
-flash-cards: main.c db.c
-			$(CC) main.c db.c -o flashcards $(LIB)
+bin/flash-cards: src/main.c src/db.c src/tui.c
+			$(CC) src/main.c src/db.c src/tui.c -o flashcards $(LIB)
 
 clean:
 			rm -rf flash-cards

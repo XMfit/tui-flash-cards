@@ -7,7 +7,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#define NAME_BUFFER 1024
+#define MAX_BUFFER 1024
 
 // Yoinked from Tsoding
 // Dyanmic Arrays in C
