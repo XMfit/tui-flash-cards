@@ -120,6 +120,7 @@ void popup_message(WINDOW * parent_win, const char* message) {
    box(popup_win, 0, 0);
 
    mvwprintw(popup_win, 1, 2, "%s", message);
+   mvwprintw(popup_win, 3, 2, "Press enter to close");
    wrefresh(popup_win);
 
    while(1) {
@@ -131,5 +132,13 @@ void popup_message(WINDOW * parent_win, const char* message) {
    werase(popup_win);
    wrefresh(popup_win);
    delwin(popup_win);
+}
+
+void perrorw(const char* err_msg) {
+   attron(A_BOLD);
+   mvprintw(LINES - 3, 0, "%s", err_msg);
+   attroff(A_BOLD);
+   clrtoeol();
+   refresh();
 }
 

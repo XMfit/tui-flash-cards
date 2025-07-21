@@ -5,11 +5,11 @@ A cli flash card program using ncurses for a cli and sqlite for deck storage
 ## Run
 
 ## Todo
-- Create backend lol
-    - Create sqlite table structure
-    - Safe interface to read and write
-    - A crude way to store retrieved deck (arraylist maybe)
-    - Primitive way for chosing cards and 'flipping' them
+- Create backend
+    - Rework a few back end functions for new interface
+    - Create error checking for things like empty inputs etc
+    - Create quiz logic
 - Create front end
-    - Read ncurses docs
+    - Finish functionality for Main Menu
+    - Create deck manager menu + displays
     - Do it

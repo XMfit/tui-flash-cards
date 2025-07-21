@@ -1,4 +1,6 @@
 #include "../include/db.h"
+#include "../include/tui.h"
+#include <ncurses.h>
 
 void setup_database(sqlite3 **db) {
    char* err_msg = 0;
@@ -79,7 +81,6 @@ int load_deck(sqlite3* db, const char* deck_name, Deck* deck) {
       return 1;
 }
 
-
 void list_decks(sqlite3* db) {
    sqlite3_stmt* stmt;
    const char* sql = "SELECT name FROM decks ORDER BY name ASC;";
@@ -105,67 +106,69 @@ void list_decks(sqlite3* db) {
    sqlite3_finalize(stmt);
 }
 
-void create_deck(sqlite3 *db) {
-   char deck_name[MAX_BUFFER];
-   printf("Enter name for new deck: ");
-   fgets(deck_name, sizeof(deck_name), stdin);
+void create_deck(sqlite3 *db, char* deck_name) {
    to_lowercase(deck_name);
    remove_newline(deck_name);
 
+   char status_msg[MAX_BUFFER] = {0};
    sqlite3_stmt* stmt;
-   int deck_id;
 
-   if (deck_exists(db, deck_name, &deck_id)) {
-      printf("Deck: %s already exists\n", deck_name);
+   if (deck_exists(db, deck_name, NULL)) { // return if deck already exists
+      snprintf(status_msg, sizeof(status_msg), "Deck: '%s' already exists", deck_name); 
+      popup_message(stdscr, status_msg);
       return;
    }
 
    // Insert new deck
    const char *insert_sql = "INSERT INTO decks (name) VALUES (?);";
    if (sqlite3_prepare_v2(db, insert_sql, -1, &stmt, 0) != SQLITE_OK) {
-      printf("Prepare failed: %s\n", sqlite3_errmsg(db));
+      snprintf(status_msg, sizeof(status_msg), "Deck creation failed: '%s' - %s", deck_name, sqlite3_errmsg(db));
+      perrorw(status_msg);
       return;
    }
-
    sqlite3_bind_text(stmt, 1, deck_name, -1, SQLITE_STATIC);
 
    if (sqlite3_step(stmt) == SQLITE_DONE) {
-      int new_id = (int)sqlite3_last_insert_rowid(db);
-      printf("Deck created: %s (ID: %d)\n", deck_name, new_id);
+      snprintf(status_msg, sizeof(status_msg), "Deck: '%s' created!", deck_name); 
+      popup_message(stdscr, status_msg);
    } else {
-      fprintf(stderr, "Failed to create deck: %s\n", sqlite3_errmsg(db));
+      snprintf(status_msg, sizeof(status_msg), "Deck creation failed: '%s' - %s", deck_name, sqlite3_errmsg(db));
+      perrorw(status_msg);
    }
+
 
    sqlite3_finalize(stmt);
 }
 
-void delete_deck(sqlite3* db) {
-   char deck_name[MAX_BUFFER];
-   printf("Enter deck to delete: ");
-   fgets(deck_name, sizeof(deck_name), stdin);
+void delete_deck(sqlite3* db, char* deck_name) {
    to_lowercase(deck_name);
    remove_newline(deck_name);
 
+   char status_msg[MAX_BUFFER] = {0};
    sqlite3_stmt* stmt;
    int deck_id;
 
    if (!deck_exists(db, deck_name, &deck_id)) {
-      printf("Deck: %s does not exist\n", deck_name);
+      snprintf(status_msg, sizeof(status_msg), "Deck: '%s' does not exist", deck_name);
+      popup_message(stdscr, status_msg);
       return;
    }
 
    // Delete deck and cascade-delete cards
    const char *delete_sql = "DELETE FROM decks WHERE id = ?;";
    if (sqlite3_prepare_v2(db, delete_sql, -1, &stmt, 0) != SQLITE_OK) {
-      printf("Prepare failed: %s\n", sqlite3_errmsg(db));
+      snprintf(status_msg, sizeof(status_msg), "Deck deletion failed: '%s' - %s", deck_name, sqlite3_errmsg(db));
+      perrorw(status_msg);
       return;
    }
 
    sqlite3_bind_int(stmt, 1, deck_id);
    if (sqlite3_step(stmt) == SQLITE_DONE) {
-      printf("Deck '%s' (ID: %d) and its cards have been deleted.\n", deck_name, deck_id);
+      snprintf(status_msg, sizeof(status_msg), "Deck: '%s' and its cards have been deleted", deck_name);
+      popup_message(stdscr, status_msg);
    } else {
-      printf("Failed to delete deck: %s\n", sqlite3_errmsg(db));
+      snprintf(status_msg, sizeof(status_msg), "Deck deletion failed: '%s' - %s", deck_name, sqlite3_errmsg(db));
+      perrorw(status_msg);
    }
 
    sqlite3_finalize(stmt);

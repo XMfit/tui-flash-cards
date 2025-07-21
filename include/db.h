@@ -41,8 +41,8 @@ int deck_exists(sqlite3* db, const char* deck_name, int* deck_id);
 void list_decks(sqlite3* db);
 int load_deck(sqlite3* db, const char* deck_name, Deck* deck);
 
-void create_deck(sqlite3* db);
-void delete_deck(sqlite3* db);
+void create_deck(sqlite3* db, char* deck_name);
+void delete_deck(sqlite3* db, char* deck_name);
 void add_card(sqlite3* db, const char* deck_name);
 void delete_card(sqlite3* db, int card_id);
 

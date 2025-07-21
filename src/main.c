@@ -1,3 +1,4 @@
+#include <linux/limits.h>
 #include <ncurses.h>
 #include <sqlite3.h>
 #include "../include/db.h"
@@ -32,22 +33,30 @@ int main() {
       int choice = draw_menu(menu_win, starty, startx, main_menu_choices, 5, "Main Menu");
       char user_input[MAX_BUFFER];
       switch(choice) {
-         case 0: {
+         case 0: { // create deck
             form_input(stdscr, "Enter deck name: ", user_input, MAX_BUFFER);
-            attron(A_BOLD);
-            mvprintw(LINES - 3, 0, "Adding Deck: %s", user_input);
-            attroff(A_BOLD);
-            popup_message(stdscr, "AWOOGA");
-            clrtoeol();
-            refresh();
+            if (strlen(user_input) == 0) {
+               perrorw("Enter valid deck name");
+               continue;
+            }
+            create_deck(db, user_input);
+            perrorw("Deck added");
             break;
          }
          case 1:
             break;
          case 2:
             break;
-         case 3:
+         case 3: { // delete deck
+            form_input(stdscr, "Enter deck to delete ", user_input, MAX_BUFFER);
+            if (strlen(user_input) == 0) {
+               perrorw("Enter valid deck name");
+               continue;
+            }
+            delete_deck(db, user_input);
+            perrorw("Deck deleted");
             break;
+         }
          case 4:
          case -1:
             running = 0;
