@@ -48,19 +48,43 @@ typedef struct {
    size_t capacity;
 } DeckInfoList;
 
+/*
+* Brief - Create sqlite database
+* Input - Reference to sqlite3 pointer
+*/
 void setup_database(sqlite3** db);
+
+/*
+* Brief - Verify if deck exists by deck_name, and sets deck id if passed
+* Input - sqlite3* db, deck_name, and pointer to deck id
+* Output - Flag specifying if deck exists or not
+*/
 int deck_exists(sqlite3* db, const char* deck_name, int* deck_id);
-void list_decks(sqlite3* db);
 
-void load_deck_info_list(sqlite3* db, DeckInfoList* list);
-void free_deck_info_list(DeckInfoList* list);
+/*
+* Brief - Load all deck information into DeckInfoList structure 
+* Input - database pointer, DeckInfoList struct pointer
+*/ 
+void load_deck_list(sqlite3* db, DeckInfoList* list);
 
-int load_deck(sqlite3* db, const char* deck_name, Deck* deck);
+/*
+* Brief - free DeckInfoList
+*/
+void free_deck_list(DeckInfoList* list);
+
+/*
+* Brief - Load cards into deck by id
+* Input - Database pointer, deck_id, and a pointer to the Deck structure
+*/
+void load_deck_cards(sqlite3* db, int deck_id, Deck* deck);
+void free_deck_cards(Deck* deck);
 
 void create_deck(sqlite3* db, char* deck_name);
-void delete_deck(sqlite3* db, char* deck_name);
-void add_card(sqlite3* db, const char* deck_name);
-void delete_card(sqlite3* db, int card_id);
+void delete_deck_by_name(sqlite3* db, char* deck_name);
+void delete_deck_by_id(sqlite3* db, int deck_id);
+
+void add_card(sqlite3* db, int deck_id, const char* front, const char* back);
+void delete_card_by_id(sqlite3* db, int card_id);
 
 // extra util functions
 void remove_newline(char* str);

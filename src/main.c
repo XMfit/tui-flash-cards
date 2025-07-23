@@ -1,15 +1,15 @@
-#include <linux/limits.h>
-#include <ncurses.h>
-#include <sqlite3.h>
 #include "../include/db.h"
 #include "../include/tui.h"
+
+void deck_wizard(WINDOW* deck_win, const int deck_id);
 
 extern const char* main_menu_choices[];
 extern const char* deck_actions_menu_choices[];
 
+sqlite3* db;
+
 int main() {
    // Set up DB
-   sqlite3* db;
    setup_database(&db);
 
    // Set up screen
@@ -24,22 +24,20 @@ int main() {
    int height, width;
    height = MAIN_MENU_HEIGHT;
    width = MAIN_MENU_WIDTH;
-   int starty = (LINES - height) / 2;
-   int startx = (COLS - width) / 2;
 
-   WINDOW* menu_win = newwin(height, width, starty, startx);
+   WINDOW* menu_win = newwin(height, width, MAIN_MENU_Y, MAIN_MENU_X);
 
    // Main loop for user interaction
    int running = 1;
    while (running) {
-      int choice = draw_menu(menu_win, starty, startx, main_menu_choices, 4, "Main Menu");
+      int choice = draw_menu(menu_win, MAIN_MENU_Y, MAIN_MENU_X, main_menu_choices, 4, "Main Menu");
       char input1[MAX_BUFFER];
       char input2[MAX_BUFFER];
       Deck decks = {0};
       DeckInfoList deck_info = {0};
       switch(choice) {
          case 0: { // create deck
-            form_input(stdscr, "Enter deck name: ", input1, MAX_BUFFER);
+            form_input(stdscr, DECKC_PROMPT, input1, MAX_BUFFER);
             if (strlen(input1) == 0) {
                perrorw("Enter valid deck name");
                continue;
@@ -49,18 +47,20 @@ int main() {
             break;
          }
          case 1: { // View deck data and select deck
-            load_deck_info_list(db, &deck_info);
+            load_deck_list(db, &deck_info);
             int deck_id = show_deck_info(stdscr, &deck_info);
-            draw_menu(menu_win, starty, startx, deck_actions_menu_choices, 6, "Deck Manager");
+            free_deck_list(&deck_info);
+            if (deck_id > 0)
+               deck_wizard(menu_win, deck_id);
             break;
          }
          case 2: { // delete deck
-            form_input(stdscr, "Enter deck to delete ", input1, MAX_BUFFER);
+            form_input(stdscr, DECKD_PROMPT, input1, MAX_BUFFER);
             if (strlen(input1) == 0) {
                perrorw("Enter valid deck name");
                continue;
             }
-            delete_deck(db, input1);
+            delete_deck_by_name(db, input1);
             perrorw("Deck deleted");
             break;
          }
@@ -78,3 +78,46 @@ int main() {
    sqlite3_close(db);
    return 0;
 }
+
+void deck_wizard(WINDOW* deck_win, const int deck_id) {
+   int running = 1;
+   Deck deck = {0};
+   while (running) {
+      int choice = draw_menu(deck_win, MAIN_MENU_Y, MAIN_MENU_X, deck_actions_menu_choices, 7, "Deck Manager");
+      load_deck_cards(db, deck_id, &deck);
+      char input1[MAX_BUFFER];
+      char input2[MAX_BUFFER];
+      switch(choice) {
+         case 0: // study deck
+            break;
+         case 1: // view cards
+            break;
+         case 2: { // add cards
+            card_input(stdscr, CARD_PROMPT, input1, input2, MAX_BUFFER);
+             if (strlen(input1) == 0 || strlen(input2) == 0) {
+               perrorw("Card information cannot be blank");
+               continue;
+            }
+            add_card(db, deck_id, input1, input2);
+            break;
+         }
+         case 3: // edit cards 
+            break;
+         case 4: { // delete card
+            break;
+         }
+         case 5: { // delete deck
+            delete_deck_by_id(db, deck_id);
+            perrorw("Deck deleted");
+         }
+         case 6: // main menu 
+         case -1:
+            running = 0;
+            break;
+         default:
+            break;
+      }
+   }
+   free_deck_cards(&deck);
+}
+

@@ -1,6 +1,4 @@
 #include "../include/tui.h"
-#include <ncurses.h>
-#include <string.h>
 
 const char* main_menu_choices[] = {
    "Create New Deck",
@@ -15,6 +13,7 @@ const char* deck_actions_menu_choices[] = {
    "Add Card",
    "Edit Card",
    "Delete Card",
+   "Delete Deck",
    "Back to Main Menu"
 };
 
@@ -121,7 +120,7 @@ void form_input(WINDOW* parent_win, const char* form_prompt, char* input, int ma
    mvwprintw(form_win, 1, 2, "%s", form_prompt);
    wrefresh(form_win);
 
-   if (!get_input_line(form_win, 2, 2, input, max_len, FORM_WIDTH - VISIBLE_WIDTH_MARGIN)) {
+   if (!get_input_line(form_win, 2, 2, input, max_len, FORM_WIDTH - VISIBLE_WIDTH_MARGIN, 1)) {
       memset(input, 0, max_len);
    }
 
@@ -135,7 +134,7 @@ void card_input(WINDOW* parent_win, const char* form_prompt, char* input1, char*
    mvwprintw(card_win, 2, 2, "Input 1:");
    wrefresh(card_win);
 
-   if (!get_input_line(card_win, 3, 2, input1, max_len, CARD_FORM_WIDTH - VISIBLE_WIDTH_MARGIN)) {
+   if (!get_input_line(card_win, 3, 2, input1, max_len, CARD_FORM_WIDTH - VISIBLE_WIDTH_MARGIN, 0)) {
       memset(input1, 0, max_len);
       memset(input2, 0, max_len);
       clear_and_destroy_window(card_win);
@@ -145,7 +144,7 @@ void card_input(WINDOW* parent_win, const char* form_prompt, char* input1, char*
    mvwprintw(card_win, 4, 2, "Input 2:");
    wrefresh(card_win);
 
-   if (!get_input_line(card_win, 5, 2, input2, max_len, CARD_FORM_WIDTH - VISIBLE_WIDTH_MARGIN)) {
+   if (!get_input_line(card_win, 5, 2, input2, max_len, CARD_FORM_WIDTH - VISIBLE_WIDTH_MARGIN, 0)) {
       memset(input1, 0, max_len);
       memset(input2, 0, max_len);
       clear_and_destroy_window(card_win);
@@ -171,7 +170,7 @@ void popup_message(WINDOW * parent_win, const char* message) {
 }
 
 // Helper functions 
-int get_input_line(WINDOW* win, int y, int x, char* buffer, int max_len, int visible_width) {
+int get_input_line(WINDOW* win, int y, int x, char* buffer, int max_len, int visible_width, int dash_flag) {
    int len = 0;
    int cursor = 0;
    int ch;
@@ -206,7 +205,10 @@ int get_input_line(WINDOW* win, int y, int x, char* buffer, int max_len, int vis
       } else if (ch >= 32 && ch < 127) { // mem move forward one and increase len and cursor
          if (len < max_len - 1 && len < visible_width - 1) {
             memmove(&buffer[cursor + 1], &buffer[cursor], len - cursor + 1);
-            buffer[cursor] = (ch == 32) ? '-' : ch;
+            if(dash_flag)
+               buffer[cursor] = (ch == 32) ? '-' : ch;
+            else
+               buffer[cursor] = ch;
             cursor++;
             len++;
          }

@@ -31,7 +31,7 @@ void setup_database(sqlite3 **db) {
    }
 }
 
-void load_deck_info_list(sqlite3* db, DeckInfoList* list) {
+void load_deck_list(sqlite3* db, DeckInfoList* list) {
     const char* sql =
         "SELECT d.id, d.name, COUNT(c.id) AS card_count "
         "FROM decks d "
@@ -70,7 +70,7 @@ void load_deck_info_list(sqlite3* db, DeckInfoList* list) {
     sqlite3_finalize(stmt);
 }
 
-void free_deck_info_list(DeckInfoList* list) {
+void free_deck_list(DeckInfoList* list) {
     for (int i = 0; i < list->count; ++i) {
         free(list->items[i].name);  // Free the strdup'd name
     }
@@ -80,7 +80,7 @@ void free_deck_info_list(DeckInfoList* list) {
     list->capacity = 0;
 }
 
-int load_deck(sqlite3* db, const char* deck_name, Deck* deck) {
+void load_deck_cards(sqlite3* db, int deck_id, Deck* deck) {
    // Clear any memory before rewriting
    free(deck->deck_name);
    for (size_t i = 0; i < deck->count; ++i) {
@@ -92,34 +92,45 @@ int load_deck(sqlite3* db, const char* deck_name, Deck* deck) {
    deck->items = NULL;
    deck->count = 0;
    deck->capacity = 0;
-   deck->deck_name = strdup(deck_name);
 
-   // Get deck ID
-   int deck_id = -1;
-   if (!deck_exists(db, deck_name, &deck_id)) {
-      return 0;
+   // Get deck name
+   sqlite3_stmt* name_stmt;
+   const char* name_sql = "SELECT name FROM decks WHERE id = ?";
+   if (sqlite3_prepare_v2(db, name_sql, -1, &name_stmt, 0) != SQLITE_OK) {
+      fprintf(stderr, "Failed to prepare name statement: %s\n", sqlite3_errmsg(db));
+      return;
    }
 
+   sqlite3_bind_int(name_stmt, 1, deck_id);
+   if (sqlite3_step(name_stmt) == SQLITE_ROW) {
+      const unsigned char* name = sqlite3_column_text(name_stmt, 0);
+      deck->deck_name = strdup((const char*)name);
+   } else {
+      fprintf(stderr, "Deck ID %d not found.\n", deck_id);
+      sqlite3_finalize(name_stmt);
+      return;
+   }
+   sqlite3_finalize(name_stmt);
+
+   // Get cards
    sqlite3_stmt* stmt;
-   const char* sql = "SELECT id, deck_id, front, back FROM cards WHERE deck_id = ?";
+   const char* sql = "SELECT id, front, back FROM cards WHERE deck_id = ?";
 
    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
-      fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
-      return 0;
+      fprintf(stderr, "Failed to prepare card statement: %s\n", sqlite3_errmsg(db));
+      return;
    }
 
    sqlite3_bind_int(stmt, 1, deck_id);
    
-   // Set card info
    while (sqlite3_step(stmt) == SQLITE_ROW) {
       int id = sqlite3_column_int(stmt, 0);
-      int deck_id_val = sqlite3_column_int(stmt, 1);
-      const unsigned char* front = sqlite3_column_text(stmt, 2);
-      const unsigned char* back = sqlite3_column_text(stmt, 3);
+      const unsigned char* front = sqlite3_column_text(stmt, 1);
+      const unsigned char* back = sqlite3_column_text(stmt, 2);
 
       Cards card = {
          .id = id,
-         .deck_id = deck_id_val,
+         .deck_id = deck_id,
          .front = strdup((const char*)front),
          .back = strdup((const char*)back)
       };
@@ -127,36 +138,19 @@ int load_deck(sqlite3* db, const char* deck_name, Deck* deck) {
    }
 
    sqlite3_finalize(stmt);
-      return 1;
 }
 
-void list_decks(sqlite3* db) {
-   sqlite3_stmt* stmt;
-   const char* sql = "SELECT name FROM decks ORDER BY name ASC;";
-
-   if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
-      fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
-      return;
+void free_deck_cards(Deck* deck) {
+   free(deck->deck_name);
+   for (size_t i = 0; i < deck->count; i++) {
+      free(deck->items[i].front);
+      free(deck->items[i].back);
    }
-
-   printf("\nDecks:\n");
-   int found = 0;
-   while (sqlite3_step(stmt) == SQLITE_ROW) {
-      const unsigned char* name = sqlite3_column_text(stmt, 0);
-      printf("- %s\n", name);
-      found = 1;
-   }
-   printf("\n");
-
-   if (!found) {
-      printf("No decks found.\n");
-   }
-
-   sqlite3_finalize(stmt);
+   free(deck->items);
 }
+
 
 void create_deck(sqlite3 *db, char* deck_name) {
-   to_lowercase(deck_name);
    remove_newline(deck_name);
 
    char status_msg[MAX_BUFFER] = {0};
@@ -189,8 +183,7 @@ void create_deck(sqlite3 *db, char* deck_name) {
    sqlite3_finalize(stmt);
 }
 
-void delete_deck(sqlite3* db, char* deck_name) {
-   to_lowercase(deck_name);
+void delete_deck_by_name(sqlite3* db, char* deck_name) {
    remove_newline(deck_name);
 
    char status_msg[MAX_BUFFER] = {0};
@@ -223,28 +216,35 @@ void delete_deck(sqlite3* db, char* deck_name) {
    sqlite3_finalize(stmt);
 }
 
-void add_card(sqlite3* db, const char* deck_name) {
-   char front[MAX_BUFFER];
-   char back[MAX_BUFFER];
-
+void delete_deck_by_id(sqlite3* db, int deck_id) {
+   char status_msg[MAX_BUFFER] = {0};
    sqlite3_stmt* stmt;
-   int deck_id = 0;
 
-   deck_exists(db, deck_name, &deck_id);
+   const char *delete_sql = "DELETE FROM decks WHERE id = ?;";
+   if (sqlite3_prepare_v2(db, delete_sql, -1, &stmt, 0) != SQLITE_OK) {
+      snprintf(status_msg, sizeof(status_msg), "Deck deletion failed [id=%d]: %s", deck_id, sqlite3_errmsg(db));
+      perrorw(status_msg);
+      return;
+   }
 
-   // Contents of card
-   printf("Enter card front: ");
-   fgets(front, sizeof(front), stdin);
-   remove_newline(front);
+   sqlite3_bind_int(stmt, 1, deck_id);
+   if (sqlite3_step(stmt) == SQLITE_DONE) {
+      snprintf(status_msg, sizeof(status_msg), "Deck [id=%d] and its cards have been deleted", deck_id);
+      popup_message(stdscr, status_msg);
+   } else {
+      snprintf(status_msg, sizeof(status_msg), "Deck deletion failed [id=%d]: %s", deck_id, sqlite3_errmsg(db));
+      perrorw(status_msg);
+   }
 
-   printf("Enter card back: ");
-   fgets(back, sizeof(back), stdin);
-   remove_newline(back);
+   sqlite3_finalize(stmt);
+}
 
-   // Insert card
+void add_card(sqlite3* db, int deck_id, const char* front, const char* back) {
+   sqlite3_stmt* stmt;
+
    const char *insert_sql = "INSERT INTO cards (deck_id, front, back) VALUES (?, ?, ?);";
    if (sqlite3_prepare_v2(db, insert_sql, -1, &stmt, 0) != SQLITE_OK) {
-      printf("Prepare failed: %s\n", sqlite3_errmsg(db));
+      fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
       return;
    }
 
@@ -252,16 +252,14 @@ void add_card(sqlite3* db, const char* deck_name) {
    sqlite3_bind_text(stmt, 2, front, -1, SQLITE_STATIC);
    sqlite3_bind_text(stmt, 3, back, -1, SQLITE_STATIC);
 
-   if (sqlite3_step(stmt) == SQLITE_DONE) {
-      printf("Card added to deck '%s'.\n", deck_name);
-   } else {
-      printf("Failed to insert card: %s\n", sqlite3_errmsg(db));
+   if (sqlite3_step(stmt) != SQLITE_DONE) {
+      fprintf(stderr, "Failed to insert card: %s\n", sqlite3_errmsg(db));
    }
 
    sqlite3_finalize(stmt);
 }
 
-void delete_card(sqlite3* db, int card_id) {
+void delete_card_by_id(sqlite3* db, int card_id) {
    sqlite3_stmt* stmt;
    const char* sql = "DELETE FROM cards WHERE id = ?;";
 

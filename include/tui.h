@@ -3,11 +3,16 @@
 
 #include <ncurses.h>
 #include <string.h>
+#include <stdlib.h>
 #include "db.h"
 
 // Window Dimension Macros
 #define MAIN_MENU_HEIGHT 15
 #define MAIN_MENU_WIDTH 70
+
+// Window Positions
+#define MAIN_MENU_Y ((LINES - MAIN_MENU_HEIGHT) / 2)
+#define MAIN_MENU_X ((COLS - MAIN_MENU_WIDTH) / 2)
 
 #define FORM_HEIGHT 5
 #define FORM_WIDTH  70
@@ -28,6 +33,11 @@
 // Key Macros 
 #define ESC_KEY 27
 #define SPACE_KEY 32
+
+// Prompts 
+#define CARD_PROMPT "Enter Card Information: "
+#define DECKC_PROMPT "Enter deck name: "
+#define DECKD_PROMPT "Enter deck to delete "
 
 int draw_menu(WINDOW* win, int starty, int startx, const char** choices, int n_choices, const char* title);
 
@@ -52,7 +62,7 @@ int show_deck_info(WINDOW* parent, DeckInfoList* info);
 * Input - Window win thats calling it, y & x cords specifying where to start input line in window,
 * buffer to save line in, length of buffer, size of input box
 */
-int get_input_line(WINDOW* win, int y, int x, char* buffer, int max_len, int visible_width);
+int get_input_line(WINDOW* win, int y, int x, char* buffer, int max_len, int visible_width, int dash_flag);
 
 /*
 * Brief - Create a window centered and below the parent 
