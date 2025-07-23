@@ -36,9 +36,25 @@ typedef struct {
    size_t capacity;
 } Deck;
 
+typedef struct {
+   int id;
+   char* name;
+   int card_count;
+} DeckInfo;
+
+typedef struct {
+   DeckInfo* items;
+   size_t count;
+   size_t capacity;
+} DeckInfoList;
+
 void setup_database(sqlite3** db);
 int deck_exists(sqlite3* db, const char* deck_name, int* deck_id);
 void list_decks(sqlite3* db);
+
+void load_deck_info_list(sqlite3* db, DeckInfoList* list);
+void free_deck_info_list(DeckInfoList* list);
+
 int load_deck(sqlite3* db, const char* deck_name, Deck* deck);
 
 void create_deck(sqlite3* db, char* deck_name);

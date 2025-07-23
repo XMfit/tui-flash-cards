@@ -31,6 +31,55 @@ void setup_database(sqlite3 **db) {
    }
 }
 
+void load_deck_info_list(sqlite3* db, DeckInfoList* list) {
+    const char* sql =
+        "SELECT d.id, d.name, COUNT(c.id) AS card_count "
+        "FROM decks d "
+        "LEFT JOIN cards c ON d.id = c.deck_id "
+        "GROUP BY d.id "
+        "ORDER BY d.name ASC;";
+
+    sqlite3_stmt* stmt;
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        //fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return;
+    }
+
+    // Zero out list
+    list->items = NULL;
+    list->count = 0;
+    list->capacity = 0;
+
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        int id = sqlite3_column_int(stmt, 0);
+        const unsigned char* name_text = sqlite3_column_text(stmt, 1);
+        int card_count = sqlite3_column_int(stmt, 2);
+
+        if (!name_text) continue;
+
+        DeckInfo info = {
+            .id = id,
+            .name = strdup((const char*)name_text),
+            .card_count = card_count
+        };
+
+        da_append(list, info);
+    }
+
+    sqlite3_finalize(stmt);
+}
+
+void free_deck_info_list(DeckInfoList* list) {
+    for (int i = 0; i < list->count; ++i) {
+        free(list->items[i].name);  // Free the strdup'd name
+    }
+    free(list->items);  // Free the array itself
+    list->items = NULL;
+    list->count = 0;
+    list->capacity = 0;
+}
+
 int load_deck(sqlite3* db, const char* deck_name, Deck* deck) {
    // Clear any memory before rewriting
    free(deck->deck_name);
@@ -217,16 +266,16 @@ void delete_card(sqlite3* db, int card_id) {
    const char* sql = "DELETE FROM cards WHERE id = ?;";
 
    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
-      fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
+      //fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
       return;
    }
 
    sqlite3_bind_int(stmt, 1, card_id);
 
    if (sqlite3_step(stmt) == SQLITE_DONE) {
-      printf("Card with ID %d has been deleted.\n", card_id);
+      //printf("Card with ID %d has been deleted.\n", card_id);
    } else {
-      fprintf(stderr, "Failed to delete card: %s\n", sqlite3_errmsg(db));
+      //fprintf(stderr, "Failed to delete card: %s\n", sqlite3_errmsg(db));
    }
 
    sqlite3_finalize(stmt);
@@ -237,7 +286,7 @@ int deck_exists(sqlite3* db, const char* deck_name, int* deck_id) {
    const char* sql = "SELECT id FROM decks WHERE name = ? LIMIT 1;";
 
    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
-      fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
+      //fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
       return 0;
    }
 
