@@ -6,7 +6,7 @@ LIB = -lsqlite3 -lncurses
 all: bin/flash-cards
 
 bin/flash-cards: src/main.c src/db.c src/tui.c
-			$(CC) src/main.c src/db.c src/tui.c -o bin/flashcards $(LIB)
+			$(CC) src/main.c src/db.c src/tui.c -o bin/flash-cards $(LIB)
 
 clean:
-			rm -rf flash-cards
+			rm -rf bin/flash-cards

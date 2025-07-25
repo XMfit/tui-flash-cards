@@ -1,5 +1,6 @@
 #include "../include/db.h"
 #include "../include/tui.h"
+#include <ncurses.h>
 
 void deck_wizard(WINDOW* deck_win, const int deck_id);
 
@@ -83,15 +84,19 @@ void deck_wizard(WINDOW* deck_win, const int deck_id) {
    int running = 1;
    Deck deck = {0};
    while (running) {
-      int choice = draw_menu(deck_win, MAIN_MENU_Y, MAIN_MENU_X, deck_actions_menu_choices, 7, "Deck Manager");
+      int choice = draw_menu(deck_win, MAIN_MENU_Y, MAIN_MENU_X, deck_actions_menu_choices, 6, "Deck Manager");
       load_deck_cards(db, deck_id, &deck);
       char input1[MAX_BUFFER];
       char input2[MAX_BUFFER];
       switch(choice) {
-         case 0: // study deck
+         case 0: { // study deck
+            study_cards(stdscr, &deck);
             break;
-         case 1: // view cards
+         }
+         case 1: { // view cards
+            display_cards(stdscr, &deck);
             break;
+         }
          case 2: { // add cards
             card_input(stdscr, CARD_PROMPT, input1, input2, MAX_BUFFER);
              if (strlen(input1) == 0 || strlen(input2) == 0) {
@@ -103,14 +108,11 @@ void deck_wizard(WINDOW* deck_win, const int deck_id) {
          }
          case 3: // edit cards 
             break;
-         case 4: { // delete card
-            break;
-         }
-         case 5: { // delete deck
+         case 4: { // delete deck
             delete_deck_by_id(db, deck_id);
             perrorw("Deck deleted");
          }
-         case 6: // main menu 
+         case 5: // main menu 
          case -1:
             running = 0;
             break;

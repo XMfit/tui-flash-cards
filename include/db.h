@@ -25,6 +25,7 @@
 typedef struct {
    int id;
    int deck_id;
+   int study_flag;
    char *front;
    char *back;
 } Cards;
@@ -77,6 +78,7 @@ void free_deck_list(DeckInfoList* list);
 * Input - Database pointer, deck_id, and a pointer to the Deck structure
 */
 void load_deck_cards(sqlite3* db, int deck_id, Deck* deck);
+void reset_study_flags(Deck* deck);
 void free_deck_cards(Deck* deck);
 
 void create_deck(sqlite3* db, char* deck_name);

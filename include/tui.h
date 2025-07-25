@@ -11,20 +11,23 @@
 #define MAIN_MENU_WIDTH 70
 
 // Window Positions
-#define MAIN_MENU_Y ((LINES - MAIN_MENU_HEIGHT) / 2)
+#define MAIN_MENU_Y ((LINES - MAIN_MENU_HEIGHT) / 2) - 10
 #define MAIN_MENU_X ((COLS - MAIN_MENU_WIDTH) / 2)
 
-#define FORM_HEIGHT 5
+#define FORM_HEIGHT 7
 #define FORM_WIDTH  70
 
-#define POPUP_HEIGHT 5 
+#define POPUP_HEIGHT 7 
 #define POPUP_WIDTH 70
+
+#define CARD_HEIGHT 10 
+#define CARD_WIDTH  70
 
 #define CARD_FORM_HEIGHT 10
 #define CARD_FORM_WIDTH 70
 
 // Margin Macros
-#define BOTTOM_MARGIN 5
+#define BOTTOM_MARGIN 15
 #define VISIBLE_WIDTH_MARGIN 4
 
 // Padding Macros 
@@ -55,6 +58,18 @@ int calc_max_line_width(const DeckInfoList* info);
 * Output - ID of the selected Deck
 */
 int show_deck_info(WINDOW* parent, DeckInfoList* info);
+
+/*
+* Brief - Function to display cards in a window
+* Input - Parent window, Deck structure
+*/
+void display_cards(WINDOW* parent, Deck* deck);
+
+/*
+* Brief - Function to display cards in a window, and allow the user to study them 
+* Input - Parent window, Deck structure 
+*/
+void study_cards(WINDOW* parent, Deck* deck);
 
 /*
 * Brief - Interactive input line allowing users to type their input, and use the keypads to move the 

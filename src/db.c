@@ -1,6 +1,7 @@
 #include "../include/db.h"
 #include "../include/tui.h"
 #include <ncurses.h>
+#include <stddef.h>
 
 void setup_database(sqlite3 **db) {
    char* err_msg = 0;
@@ -131,6 +132,7 @@ void load_deck_cards(sqlite3* db, int deck_id, Deck* deck) {
       Cards card = {
          .id = id,
          .deck_id = deck_id,
+         .study_flag = 0,
          .front = strdup((const char*)front),
          .back = strdup((const char*)back)
       };
@@ -138,6 +140,12 @@ void load_deck_cards(sqlite3* db, int deck_id, Deck* deck) {
    }
 
    sqlite3_finalize(stmt);
+}
+
+void reset_study_flags(Deck* deck) {
+   for (size_t i = 0; i < deck->count; i++) {
+      deck->items[i].study_flag = 0;
+   }
 }
 
 void free_deck_cards(Deck* deck) {
@@ -148,7 +156,6 @@ void free_deck_cards(Deck* deck) {
    }
    free(deck->items);
 }
-
 
 void create_deck(sqlite3 *db, char* deck_name) {
    remove_newline(deck_name);
