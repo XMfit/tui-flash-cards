@@ -15,7 +15,7 @@ int main() {
 
    // Set up screen
    initscr();
-   set_escdelay(25);
+   set_escdelay(10);
    cbreak();
    noecho();
    keypad(stdscr, TRUE);

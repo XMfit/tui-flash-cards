@@ -1,7 +1,5 @@
 #include "../include/db.h"
 #include "../include/tui.h"
-#include <ncurses.h>
-#include <stddef.h>
 
 void setup_database(sqlite3 **db) {
    char* err_msg = 0;
@@ -94,11 +92,14 @@ void load_deck_cards(sqlite3* db, int deck_id, Deck* deck) {
    deck->count = 0;
    deck->capacity = 0;
 
+   char status_msg[MAX_BUFFER] = {0};
+
    // Get deck name
    sqlite3_stmt* name_stmt;
    const char* name_sql = "SELECT name FROM decks WHERE id = ?";
    if (sqlite3_prepare_v2(db, name_sql, -1, &name_stmt, 0) != SQLITE_OK) {
-      fprintf(stderr, "Failed to prepare name statement: %s\n", sqlite3_errmsg(db));
+      snprintf(status_msg, sizeof(status_msg), "Failed to prepare name statement: %s", sqlite3_errmsg(db));
+      perrorw(status_msg);
       return;
    }
 
@@ -107,7 +108,8 @@ void load_deck_cards(sqlite3* db, int deck_id, Deck* deck) {
       const unsigned char* name = sqlite3_column_text(name_stmt, 0);
       deck->deck_name = strdup((const char*)name);
    } else {
-      fprintf(stderr, "Deck ID %d not found.\n", deck_id);
+      snprintf(status_msg, sizeof(status_msg), "Deck ID %d not found", deck_id);
+      perrorw(status_msg);
       sqlite3_finalize(name_stmt);
       return;
    }
@@ -118,7 +120,8 @@ void load_deck_cards(sqlite3* db, int deck_id, Deck* deck) {
    const char* sql = "SELECT id, front, back FROM cards WHERE deck_id = ?";
 
    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
-      fprintf(stderr, "Failed to prepare card statement: %s\n", sqlite3_errmsg(db));
+      snprintf(status_msg, sizeof(status_msg), "Failed to prepare card statement: %s", sqlite3_errmsg(db));
+      perrorw(status_msg);
       return;
    }
 
@@ -247,11 +250,13 @@ void delete_deck_by_id(sqlite3* db, int deck_id) {
 }
 
 void add_card(sqlite3* db, int deck_id, const char* front, const char* back) {
+   char status_msg[MAX_BUFFER] = {0};
    sqlite3_stmt* stmt;
 
    const char *insert_sql = "INSERT INTO cards (deck_id, front, back) VALUES (?, ?, ?);";
    if (sqlite3_prepare_v2(db, insert_sql, -1, &stmt, 0) != SQLITE_OK) {
-      fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
+      snprintf(status_msg, sizeof(status_msg), "Prepare failed %s", sqlite3_errmsg(db));
+      perrorw(status_msg);
       return;
    }
 
@@ -260,38 +265,45 @@ void add_card(sqlite3* db, int deck_id, const char* front, const char* back) {
    sqlite3_bind_text(stmt, 3, back, -1, SQLITE_STATIC);
 
    if (sqlite3_step(stmt) != SQLITE_DONE) {
-      fprintf(stderr, "Failed to insert card: %s\n", sqlite3_errmsg(db));
+      snprintf(status_msg, sizeof(status_msg), "Failed to insert card %s", sqlite3_errmsg(db));
+      perrorw(status_msg);
    }
 
    sqlite3_finalize(stmt);
 }
 
 void delete_card_by_id(sqlite3* db, int card_id) {
+   char status_msg[MAX_BUFFER] = {0};
    sqlite3_stmt* stmt;
    const char* sql = "DELETE FROM cards WHERE id = ?;";
 
    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
-      //fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
+      snprintf(status_msg, sizeof(status_msg), "Prepare failed %s", sqlite3_errmsg(db));
+      perrorw(status_msg);
       return;
    }
 
    sqlite3_bind_int(stmt, 1, card_id);
 
    if (sqlite3_step(stmt) == SQLITE_DONE) {
-      //printf("Card with ID %d has been deleted.\n", card_id);
+      snprintf(status_msg, sizeof(status_msg), "Card Deleted");
+      perrorw(status_msg);
    } else {
-      //fprintf(stderr, "Failed to delete card: %s\n", sqlite3_errmsg(db));
+      snprintf(status_msg, sizeof(status_msg), "Failed to delete card %s", sqlite3_errmsg(db));
+      perrorw(status_msg);
    }
 
    sqlite3_finalize(stmt);
 }
 
 int deck_exists(sqlite3* db, const char* deck_name, int* deck_id) {
+   char status_msg[MAX_BUFFER] = {0};
    sqlite3_stmt* stmt;
    const char* sql = "SELECT id FROM decks WHERE name = ? LIMIT 1;";
 
    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
-      //fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
+      snprintf(status_msg, sizeof(status_msg), "Prepare failed %s", sqlite3_errmsg(db));
+      perrorw(status_msg);
       return 0;
    }
 

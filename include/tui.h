@@ -11,7 +11,7 @@
 #define MAIN_MENU_WIDTH 70
 
 // Window Positions
-#define MAIN_MENU_Y ((LINES - MAIN_MENU_HEIGHT) / 2) - 10
+#define MAIN_MENU_Y ((LINES - MAIN_MENU_HEIGHT) / 2) - 5
 #define MAIN_MENU_X ((COLS - MAIN_MENU_WIDTH) / 2)
 
 #define FORM_HEIGHT 7

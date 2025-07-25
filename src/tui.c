@@ -1,9 +1,7 @@
 #include "../include/tui.h"
-#include <ncurses.h>
 #include <time.h>
 
 typedef enum {SHOW_FRONT, SHOW_BACK} State;
-
 extern sqlite3* db;
 
 const char* main_menu_choices[] = {
@@ -138,25 +136,25 @@ void display_cards(WINDOW* parent, Deck* deck) {
       // Print Card Info 
       mvwprintw(win, 1, 2, "Card %d/%zu", index + 1, deck->count);
       if (state == SHOW_FRONT) {
-         mvwprintw(win, 3, 2, "Front:");
-         mvwprintw(win, 4, 4, "%s", deck->items[index].front);
+         mvwprintw(win, 2, 2, "Front:");
+         mvwprintw(win, 3, 4, "%s", deck->items[index].front);
       } else {
-         mvwprintw(win, 3, 2, "Back:");
-         mvwprintw(win, 4, 4, "%s", deck->items[index].back);
+         mvwprintw(win, 2, 2, "Back:");
+         mvwprintw(win, 3, 4, "%s", deck->items[index].back);
       }
       
-      mvwprintw(win, 7, 2, "[<--] Prev  [-->] Next  [SPACE] Flip [DEL] Delete  [ESC] Quit");
+      mvwprintw(win, CARD_HEIGHT - 2, 2, "[<--] Prev  [-->] Next  [SPACE] Flip [DEL] Delete  [ESC] Quit");
       wrefresh(win);
 
       ch = wgetch(win);
       switch (ch) {
          case KEY_LEFT:
             if (index > 0) index--;
-            state = 1;
+            state = SHOW_FRONT;
             break;
          case KEY_RIGHT:
             if (index < (int)deck->count - 1) index++;
-            state = 1;
+            state = SHOW_FRONT;
             break;
          case SPACE_KEY:
             state = !state;
@@ -203,13 +201,13 @@ void study_cards(WINDOW* parent_win, Deck* deck) {
       // Print card info
       mvwprintw(win, 1, 2, "Card %d/%zu", index + 1, deck->count);
       if (state == SHOW_FRONT) {
-         mvwprintw(win, 3, 2, "Front:");
-         mvwprintw(win, 4, 4, "%s", deck->items[index].front);
-         mvwprintw(win, 7, 2, "[SPACE] Flip Card [ESC] Quit");
+         mvwprintw(win, 2, 2, "Front:");
+         mvwprintw(win, 3, 4, "%s", deck->items[index].front);
+         mvwprintw(win, CARD_HEIGHT - 2, 2, "[SPACE] Flip Card [ESC] Quit");
       } else {
-         mvwprintw(win, 3, 2, "Back:");
-         mvwprintw(win, 4, 4, "%s", deck->items[index].front);
-         mvwprintw(win, 7, 2, "[Y] Correct [N] Incorrect [ESC] Quit");
+         mvwprintw(win, 2, 2, "Back:");
+         mvwprintw(win, 3, 4, "%s", deck->items[index].back);
+         mvwprintw(win, CARD_HEIGHT - 2, 2, "[Y] Correct [N] Incorrect [ESC] Quit");
       }
       wrefresh(win);
 

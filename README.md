@@ -10,4 +10,5 @@ A cli flash card program using ncurses for a TUI and Sqlite for local deck stora
 - Clean up some stuff in front and back end
 - Fix multi line output when displaying cards
 - Enable card editing
+- Make UI more appealing looking
 
