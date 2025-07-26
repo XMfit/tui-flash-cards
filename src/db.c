@@ -296,6 +296,32 @@ void delete_card_by_id(sqlite3* db, int card_id) {
    sqlite3_finalize(stmt);
 }
 
+void update_card(sqlite3* db, int card_id, const char* new_front, const char* new_back) {
+   char status_msg[MAX_BUFFER] = {0};
+   sqlite3_stmt* stmt;
+   const char* sql = "UPDATE cards SET front = ?, back = ? WHERE id = ?;";
+
+   if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
+      snprintf(status_msg, sizeof(status_msg), "Prepare failed: %s", sqlite3_errmsg(db));
+      perrorw(status_msg);
+      return;
+   }
+
+   sqlite3_bind_text(stmt, 1, new_front, -1, SQLITE_STATIC);
+   sqlite3_bind_text(stmt, 2, new_back, -1, SQLITE_STATIC);
+   sqlite3_bind_int(stmt, 3, card_id);
+
+   if (sqlite3_step(stmt) != SQLITE_DONE) {
+      snprintf(status_msg, sizeof(status_msg), "Failed to update card: %s", sqlite3_errmsg(db));
+      perrorw(status_msg);
+   } else {
+      snprintf(status_msg, sizeof(status_msg), "Card updated.");
+      perrorw(status_msg);
+   }
+
+   sqlite3_finalize(stmt);
+}
+
 int deck_exists(sqlite3* db, const char* deck_name, int* deck_id) {
    char status_msg[MAX_BUFFER] = {0};
    sqlite3_stmt* stmt;

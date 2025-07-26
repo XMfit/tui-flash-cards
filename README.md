@@ -1,5 +1,5 @@
 # About
-A cli flash card program using ncurses for a TUI and Sqlite for local deck storage
+A TUI flash card program using ncurses for a TUI and Sqlite for local deck storage
 ## Build
 `make all`
 
@@ -7,8 +7,8 @@ A cli flash card program using ncurses for a TUI and Sqlite for local deck stora
 `./bin/flash-cards`
 
 ## Todo
-- Clean up some stuff in front and back end
 - Fix multi line output when displaying cards
-- Enable card editing
 - Make UI more appealing looking
+- Better way for determing window positions
+- Fix weird visual behavior when editing a card in deck for the first time
 

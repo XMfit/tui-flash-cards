@@ -1,4 +1,6 @@
 #include "../include/tui.h"
+#include <ncurses.h>
+#include <strings.h>
 #include <time.h>
 
 typedef enum {SHOW_FRONT, SHOW_BACK} State;
@@ -15,7 +17,6 @@ const char* deck_actions_menu_choices[] = {
    "Study This Deck",
    "View Cards",
    "Add Card",
-   "Edit Card",
    "Delete Deck",
    "Back to Main Menu"
 };
@@ -30,7 +31,9 @@ int draw_menu(WINDOW* win, int starty, int startx, const char** choices, int n_c
    while (1) {
       werase(win);
       box(win, 0, 0);
+      wattron(win, A_UNDERLINE);
       mvwprintw(win, 1, 2, "%s", title);
+      all_attr_off(win);
 
       for (int i = 0; i < n_choices; i++) {
          if (i == highlight) {
@@ -41,8 +44,9 @@ int draw_menu(WINDOW* win, int starty, int startx, const char** choices, int n_c
             mvwprintw(win, i + 3, 4, "%s", choices[i]);
          }
       }
-
-      mvwprintw(win, n_choices + 5, 2, "Arrow keys to navigate, Enter to select, ESC to quit");
+      wattron(win, A_BOLD);
+      mvwprintw(win, n_choices + 7, 2, "Arrow keys to navigate, Enter to select, ESC to quit");
+      all_attr_off(win);
       wrefresh(win);
 
       ch = wgetch(win);
@@ -94,7 +98,6 @@ int show_deck_info(WINDOW* parent, DeckInfoList* info) {
                       info->items[i].card_count);
          }
       }
-      mvwprintw(win, info->count + 5, 2, "Arrow keys to navigate, Enter to select, ESC to quit");
       wrefresh(win);
 
       ch = wgetch(win);
@@ -134,16 +137,23 @@ void display_cards(WINDOW* parent, Deck* deck) {
       box(win, 0, 0);
 
       // Print Card Info 
+      wattron(win, A_UNDERLINE);
       mvwprintw(win, 1, 2, "Card %d/%zu", index + 1, deck->count);
+      all_attr_off(win);
       if (state == SHOW_FRONT) {
+         wattron(win, A_BOLD);
          mvwprintw(win, 2, 2, "Front:");
+         all_attr_off(win);
          mvwprintw(win, 3, 4, "%s", deck->items[index].front);
       } else {
+         wattron(win, A_BOLD);
          mvwprintw(win, 2, 2, "Back:");
+         all_attr_off(win);
          mvwprintw(win, 3, 4, "%s", deck->items[index].back);
       }
-      
-      mvwprintw(win, CARD_HEIGHT - 2, 2, "[<--] Prev  [-->] Next  [SPACE] Flip [DEL] Delete  [ESC] Quit");
+      wattron(win, A_BOLD);
+      mvwprintw(win, CARD_HEIGHT - 2, 2, "[<-] Prev  [->] Next  [SPACE] Flip [DEL] Delete [e] Edit  [ESC] Quit");
+      all_attr_off(win);
       wrefresh(win);
 
       ch = wgetch(win);
@@ -159,6 +169,21 @@ void display_cards(WINDOW* parent, Deck* deck) {
          case SPACE_KEY:
             state = !state;
             break;
+         case 'e':
+         case 'E': {
+            char edited[MAX_BUFFER] = {0};
+            if (state == SHOW_FRONT) {
+               form_input(stdscr, "Edit Front:", edited, MAX_BUFFER, 0);
+               if(strlen(edited) > 0)
+                  update_card(db, deck->items[index].id, edited, deck->items[index].back);
+            } else {
+               form_input(stdscr, "Edit Back:", edited, MAX_BUFFER, 0);
+               if(strlen(edited) > 0)
+                  update_card(db, deck->items[index].id, deck->items[index].front, edited);
+            }
+            load_deck_cards(db, deck->items[index].deck_id, deck);
+            break;
+         }
          case KEY_DC: { // deleting cards
             delete_card_by_id(db, deck->items[index].id);
             load_deck_cards(db, deck->items[index].deck_id, deck);
@@ -199,15 +224,25 @@ void study_cards(WINDOW* parent_win, Deck* deck) {
       box(win, 0, 0);
 
       // Print card info
+      wattron(win, A_UNDERLINE);
       mvwprintw(win, 1, 2, "Card %d/%zu", index + 1, deck->count);
+      all_attr_off(win);
       if (state == SHOW_FRONT) {
+         wattron(win, A_BOLD);
          mvwprintw(win, 2, 2, "Front:");
+         all_attr_off(win);
          mvwprintw(win, 3, 4, "%s", deck->items[index].front);
+         wattron(win, A_BOLD);
          mvwprintw(win, CARD_HEIGHT - 2, 2, "[SPACE] Flip Card [ESC] Quit");
+         all_attr_off(win);
       } else {
+         wattron(win, A_BOLD);
          mvwprintw(win, 2, 2, "Back:");
+         all_attr_off(win);
          mvwprintw(win, 3, 4, "%s", deck->items[index].back);
+         wattron(win, A_BOLD);
          mvwprintw(win, CARD_HEIGHT - 2, 2, "[Y] Correct [N] Incorrect [ESC] Quit");
+         all_attr_off(win);
       }
       wrefresh(win);
 
@@ -260,13 +295,15 @@ void study_cards(WINDOW* parent_win, Deck* deck) {
    }
 }
 
-void form_input(WINDOW* parent_win, const char* form_prompt, char* input, int max_len) {
+void form_input(WINDOW* parent_win, const char* form_prompt, char* input, int max_len, int dash_flag) {
    WINDOW* form_win = create_centered_window(parent_win, FORM_HEIGHT, FORM_WIDTH);
    box(form_win, 0, 0);
 
-   mvwprintw(form_win, 1, 2, "%s", form_prompt);
+   wattron(form_win, A_BOLD);
+   mvwprintw(form_win, 1, (FORM_WIDTH - strlen(form_prompt)) / 2, "%s", form_prompt);
+   all_attr_off(form_win);
    wrefresh(form_win);
-   if (!get_input_line(form_win, 2, 2, input, max_len, FORM_WIDTH - VISIBLE_WIDTH_MARGIN, 1)) {
+   if (!get_input_line(form_win, 2, 2, input, max_len, FORM_WIDTH - VISIBLE_WIDTH_MARGIN, dash_flag)) {
       memset(input, 0, max_len);
    }
    clear_and_destroy_window(form_win);
@@ -276,8 +313,13 @@ void card_input(WINDOW* parent_win, const char* form_prompt, char* input1, char*
    WINDOW* card_win = create_centered_window(parent_win, CARD_FORM_HEIGHT, CARD_FORM_WIDTH);
    box(card_win, 0, 0);
 
-   mvwprintw(card_win, 1, 2, "%s", form_prompt);
+   wattron(card_win, A_UNDERLINE);
+   mvwprintw(card_win, 1, (CARD_FORM_WIDTH - strlen(form_prompt)) / 2, "%s", form_prompt);
+   all_attr_off(card_win);
+
+   wattron(card_win, A_BOLD);
    mvwprintw(card_win, 2, 2, "Front:");
+   all_attr_off(card_win);
    wrefresh(card_win);
 
    if (!get_input_line(card_win, 3, 2, input1, max_len, CARD_FORM_WIDTH - VISIBLE_WIDTH_MARGIN, 0)) {
@@ -290,7 +332,9 @@ void card_input(WINDOW* parent_win, const char* form_prompt, char* input1, char*
    for (int i = 3; i <= CARD_FORM_HEIGHT - 2; i++)
       mvwprintw(card_win, i, 2, "%-*s", CARD_FORM_WIDTH - VISIBLE_WIDTH_MARGIN, "");
 
+   wattron(card_win, A_BOLD);
    mvwprintw(card_win, 4, 2, "Back:");
+   all_attr_off(card_win);
    wrefresh(card_win);
 
    if (!get_input_line(card_win, 5, 2, input2, max_len, CARD_FORM_WIDTH - VISIBLE_WIDTH_MARGIN, 0)) {
@@ -306,8 +350,10 @@ void popup_message(WINDOW * parent_win, const char* message) {
    WINDOW* popup_win = create_centered_window(parent_win, POPUP_HEIGHT, POPUP_WIDTH);
    int ch;
 
-   mvwprintw(popup_win, 1, 2, "%s", message);
-   mvwprintw(popup_win, 3, 2, "Press enter to close");
+   wattron(popup_win, A_BOLD);
+   mvwprintw(popup_win, 1, (POPUP_WIDTH - strlen(message)) / 2, "%s", message);
+   all_attr_off(popup_win);
+   mvwprintw(popup_win, POPUP_HEIGHT - 2, 2, "Press enter to close");
    wrefresh(popup_win);
 
    while(1) { // Close popup when enter is pressed
@@ -418,3 +464,7 @@ void perrorw(const char* err_msg) {
    refresh();
 }
 
+// Attribute funcs 
+void all_attr_off(WINDOW* win) {
+   wattroff(win, A_ALL_ATTRS);
+}

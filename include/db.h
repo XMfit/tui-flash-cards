@@ -78,15 +78,54 @@ void free_deck_list(DeckInfoList* list);
 * Input - Database pointer, deck_id, and a pointer to the Deck structure
 */
 void load_deck_cards(sqlite3* db, int deck_id, Deck* deck);
+
+/*
+* Brief - Reset the study flag on cards in a deck 
+* Input - Deck structure
+*/
 void reset_study_flags(Deck* deck);
+
+/*
+* Brief - Free deck from memory 
+* Input - Deck structure 
+*/
 void free_deck_cards(Deck* deck);
 
+/*
+* Brief - Add deck to deck table in database 
+* Input - Database pointer, and name of deck for table 
+*/
 void create_deck(sqlite3* db, char* deck_name);
+
+/*
+* Brief - Delete deck from table via its name 
+* Input - Database pointer, and name of deck to delete 
+*/
 void delete_deck_by_name(sqlite3* db, char* deck_name);
+
+/*
+* Brief - Delete deck from table via its ID 
+* Input - Database pointer, and id of deck 
+*/
 void delete_deck_by_id(sqlite3* db, int deck_id);
 
+/*
+* Brief - Add card to the card table in the database 
+* Input - Database pointer, id of deck, front and back text of card 
+*/
 void add_card(sqlite3* db, int deck_id, const char* front, const char* back);
+
+/*
+* Brief - Delete card from database by ID 
+* Input - Database pointer, id of card
+*/
 void delete_card_by_id(sqlite3* db, int card_id);
+
+/*
+* Brief - Update card in the database 
+* Input - Database pointer, id of card, front and back text of card
+*/
+void update_card(sqlite3* db, int card_id, const char* new_front, const char* new_back);
 
 // extra util functions
 void remove_newline(char* str);

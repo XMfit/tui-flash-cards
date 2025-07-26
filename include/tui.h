@@ -21,7 +21,7 @@
 #define POPUP_WIDTH 70
 
 #define CARD_HEIGHT 10 
-#define CARD_WIDTH  70
+#define CARD_WIDTH  75
 
 #define CARD_FORM_HEIGHT 10
 #define CARD_FORM_WIDTH 70
@@ -38,9 +38,14 @@
 #define SPACE_KEY 32
 
 // Prompts 
-#define CARD_PROMPT "Enter Card Information: "
+#define CARD_PROMPT "Enter Card Information:"
 #define DECKC_PROMPT "Enter deck name: "
 #define DECKD_PROMPT "Enter deck to delete "
+
+// Attributes 
+#define A_ALL_ATTRS (A_NORMAL | A_STANDOUT | A_UNDERLINE | A_REVERSE | \
+                     A_BLINK | A_DIM | A_BOLD | A_PROTECT | A_INVIS | \
+                     A_ALTCHARSET | A_CHARTEXT)
 
 int draw_menu(WINDOW* win, int starty, int startx, const char** choices, int n_choices, const char* title);
 
@@ -97,7 +102,7 @@ void clear_and_destroy_window(WINDOW* win);
 * Brief - Create input prompt from parent window 
 * Input - Parent window, prompt for form, input buffer, buffer size
 */
-void form_input(WINDOW* parent_win, const char* form_prompt, char* input, int max_len);
+void form_input(WINDOW* parent_win, const char* form_prompt, char* input, int max_len, int dash_flag);
 
 /*
 * See above just include second input buffer
@@ -115,6 +120,11 @@ void popup_message(WINDOW * parent_win, const char* message);
 * Input - Error message 
 */
 void perrorw(const char* err_msg);
+
+/*
+* Turn off attributes
+*/ 
+void all_attr_off(WINDOW* win);
 
 #endif
 

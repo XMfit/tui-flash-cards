@@ -38,7 +38,7 @@ int main() {
       DeckInfoList deck_info = {0};
       switch(choice) {
          case 0: { // create deck
-            form_input(stdscr, DECKC_PROMPT, input1, MAX_BUFFER);
+            form_input(stdscr, DECKC_PROMPT, input1, MAX_BUFFER, 1);
             if (strlen(input1) == 0) {
                perrorw("Enter valid deck name");
                continue;
@@ -49,6 +49,11 @@ int main() {
          }
          case 1: { // View deck data and select deck
             load_deck_list(db, &deck_info);
+            if (deck_info.count == 0) {
+               popup_message(stdscr, "No Decks Available!");
+               free_deck_list(&deck_info);
+               break;
+            }
             int deck_id = show_deck_info(stdscr, &deck_info);
             free_deck_list(&deck_info);
             if (deck_id > 0)
@@ -56,7 +61,7 @@ int main() {
             break;
          }
          case 2: { // delete deck
-            form_input(stdscr, DECKD_PROMPT, input1, MAX_BUFFER);
+            form_input(stdscr, DECKD_PROMPT, input1, MAX_BUFFER, 1);
             if (strlen(input1) == 0) {
                perrorw("Enter valid deck name");
                continue;
@@ -83,8 +88,12 @@ int main() {
 void deck_wizard(WINDOW* deck_win, const int deck_id) {
    int running = 1;
    Deck deck = {0};
+   load_deck_cards(db, deck_id, &deck);
+   char title[MAX_BUFFER];
+   snprintf(title, MAX_BUFFER, "Deck Manager - %s", deck.deck_name);
+
    while (running) {
-      int choice = draw_menu(deck_win, MAIN_MENU_Y, MAIN_MENU_X, deck_actions_menu_choices, 6, "Deck Manager");
+      int choice = draw_menu(deck_win, MAIN_MENU_Y, MAIN_MENU_X, deck_actions_menu_choices, 5, title);
       load_deck_cards(db, deck_id, &deck);
       char input1[MAX_BUFFER];
       char input2[MAX_BUFFER];
@@ -106,13 +115,11 @@ void deck_wizard(WINDOW* deck_win, const int deck_id) {
             add_card(db, deck_id, input1, input2);
             break;
          }
-         case 3: // edit cards 
-            break;
-         case 4: { // delete deck
+         case 3: { // delete deck
             delete_deck_by_id(db, deck_id);
             perrorw("Deck deleted");
          }
-         case 5: // main menu 
+         case 4: // main menu 
          case -1:
             running = 0;
             break;
