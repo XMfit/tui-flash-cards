@@ -1,9 +1,35 @@
 #include "../include/db.h"
 #include "../include/tui.h"
 
+#include <linux/limits.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+
+#define DB_RELATIVE_PATH "tui-cards/flashcards.db"
+
 void setup_database(sqlite3 **db) {
    char* err_msg = 0;
-   int rc = sqlite3_open("flashcards.db", db);
+   const char* home = getenv("HOME");
+   if (!home) {
+      fprintf(stderr, "Could not determine $HOME\n");
+      exit(EXIT_FAILURE);
+   }
+
+   char db_path[PATH_MAX];
+   snprintf(db_path, sizeof(db_path), "%s/%s", home, DB_RELATIVE_PATH);
+
+   char dir_path[PATH_MAX];
+   snprintf(dir_path, sizeof(dir_path), "%s/tui-cards", home);
+
+   if (access(dir_path, F_OK) != 0) {
+      if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
+         perror("Failed to create ~/tui-cards directory");
+         exit(EXIT_FAILURE);
+      }
+   }
+
+   int rc = sqlite3_open(db_path, db);
    if (rc != SQLITE_OK) {
       fprintf(stderr, "Unable to open database: %s\n", sqlite3_errmsg(*db));
       exit(EXIT_FAILURE);
