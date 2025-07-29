@@ -1,123 +1,23 @@
 #include "../include/tui.h"
+#include "../include/menu_utils.h"
 #include <ncurses.h>
 #include <strings.h>
 #include <time.h>
 
-typedef enum {SHOW_FRONT, SHOW_BACK} State;
 extern sqlite3* db;
 
-const char* main_menu_choices[] = {
-   "Create New Deck",
-   "Select a Deck to Study or Edit",
-   "Delete a Deck",
-   "Exit"
-};
-
-const char* deck_actions_menu_choices[] = {
-   "Study This Deck",
-   "View Cards",
-   "Add Card",
-   "Delete Deck",
-   "Back to Main Menu"
-};
-
-// I'd like to rework these two functions to have some sort of helper function for the selections
-int draw_menu(WINDOW* win, int starty, int startx, const char** choices, int n_choices, const char* title) {
-   int highlight = 0;
-   int choice = -1;
-   int ch;
-   
-   keypad(win, TRUE);
-   while (1) {
-      werase(win);
-      box(win, 0, 0);
-      wattron(win, A_UNDERLINE);
-      mvwprintw(win, 1, 2, "%s", title);
-      all_attr_off(win);
-
-      for (int i = 0; i < n_choices; i++) {
-         if (i == highlight) {
-            wattron(win, A_REVERSE);
-            mvwprintw(win, i + 3, 4, "%s", choices[i]);
-            wattroff(win, A_REVERSE);
-         } else {
-            mvwprintw(win, i + 3, 4, "%s", choices[i]);
-         }
-      }
-      wattron(win, A_BOLD);
-      mvwprintw(win, n_choices + 7, 2, "Arrow keys to navigate, Enter to select, ESC to quit");
-      all_attr_off(win);
-      wrefresh(win);
-
-      ch = wgetch(win);
-      switch (ch) {
-         case KEY_UP:
-               highlight = (highlight == 0) ? n_choices - 1 : highlight - 1;
-               break;
-         case KEY_DOWN:
-               highlight = (highlight == n_choices - 1) ? 0 : highlight + 1;
-               break;
-         case 10:  // Enter
-               return highlight;
-         case ESC_KEY:
-               return -1;
-         default:
-               break;
-        }
-    }
+int draw_menu(WINDOW* win, const char** choices, int n_choices, const char* title) {
+    return generic_menu(win, n_choices, title, (void*)choices, render_string_menu_item, RETURN_INDEX);
 }
 
 int show_deck_info(WINDOW* parent, DeckInfoList* info) {
-   int highlight = 0;
-   int choice = -1;
-   int ch;
+    int max_width = calc_max_line_width(info) + GENERIC_PADDING;
+    int height = info->count + GENERIC_PADDING;
 
-   int max_width = calc_max_line_width(info) + GENERIC_PADDING;
-   int height = info->count + GENERIC_PADDING;
-
-   WINDOW* win = create_centered_window(parent, height, max_width);
-   keypad(win, TRUE);
-
-   while(1) {
-      werase(win);
-      box(win, 0, 0);
-      mvwprintw(win, 1, 2, "Deck Info");
-
-      for (int i = 0; i < info->count; i++) {
-         if (i == highlight) {
-            wattron(win, A_REVERSE);
-            mvwprintw(win, i + 2, 2, "%d: %s (%d cards)",
-                      info->items[i].id,
-                      info->items[i].name,
-                      info->items[i].card_count);
-            wattroff(win, A_REVERSE);
-         } else { 
-            mvwprintw(win, i + 2, 2, "%d: %s (%d cards)",
-                      info->items[i].id,
-                      info->items[i].name,
-                      info->items[i].card_count);
-         }
-      }
-      wrefresh(win);
-
-      ch = wgetch(win);
-      switch (ch) {
-         case KEY_UP:
-            highlight = (highlight == 0) ? info->count - 1 : highlight - 1;   
-            break;
-         case KEY_DOWN:
-            highlight = (highlight == info->count - 1) ? 0 : highlight + 1;
-            break;
-         case 10:  // Enter
-            clear_and_destroy_window(win);
-            return info->items[highlight].id;
-         case ESC_KEY:
-            clear_and_destroy_window(win);
-            return -1;
-         default:
-            break;
-        }
-   }
+    WINDOW* win = create_centered_window(parent, height, max_width);
+    int selected_id = generic_menu(win, info->count, "Deck Info", info, render_deck_info_item, RETURN_CUSTOM_ID);
+    clear_and_destroy_window(win);
+    return selected_id;
 }
 
 void display_cards(WINDOW* parent, Deck* deck) {
@@ -131,30 +31,10 @@ void display_cards(WINDOW* parent, Deck* deck) {
    int index = 0;
    State state = SHOW_FRONT;
    int ch;
-
+   
+   const char* footer = "[<-] Prev  [->] Next  [SPACE] Flip [DEL] Delete [e] Edit  [ESC] Quit";
    while(1) {
-      werase(win);
-      box(win, 0, 0);
-
-      // Print Card Info 
-      wattron(win, A_UNDERLINE);
-      mvwprintw(win, 1, 2, "Card %d/%zu", index + 1, deck->count);
-      all_attr_off(win);
-      if (state == SHOW_FRONT) {
-         wattron(win, A_BOLD);
-         mvwprintw(win, 2, 2, "Front:");
-         all_attr_off(win);
-         mvwprintw(win, 3, 4, "%s", deck->items[index].front);
-      } else {
-         wattron(win, A_BOLD);
-         mvwprintw(win, 2, 2, "Back:");
-         all_attr_off(win);
-         mvwprintw(win, 3, 4, "%s", deck->items[index].back);
-      }
-      wattron(win, A_BOLD);
-      mvwprintw(win, CARD_HEIGHT - 2, 2, "[<-] Prev  [->] Next  [SPACE] Flip [DEL] Delete [e] Edit  [ESC] Quit");
-      all_attr_off(win);
-      wrefresh(win);
+      render_card(win, deck, index, state, footer);
 
       ch = wgetch(win);
       switch (ch) {
@@ -219,32 +99,13 @@ void study_cards(WINDOW* parent_win, Deck* deck) {
    State state = SHOW_FRONT;
    int ch;
    int index = rand() % (deck->count);
-   while(1) {
-      werase(win);
-      box(win, 0, 0);
 
-      // Print card info
-      wattron(win, A_UNDERLINE);
-      mvwprintw(win, 1, 2, "Card %d/%zu", index + 1, deck->count);
-      all_attr_off(win);
-      if (state == SHOW_FRONT) {
-         wattron(win, A_BOLD);
-         mvwprintw(win, 2, 2, "Front:");
-         all_attr_off(win);
-         mvwprintw(win, 3, 4, "%s", deck->items[index].front);
-         wattron(win, A_BOLD);
-         mvwprintw(win, CARD_HEIGHT - 2, 2, "[SPACE] Flip Card [ESC] Quit");
-         all_attr_off(win);
-      } else {
-         wattron(win, A_BOLD);
-         mvwprintw(win, 2, 2, "Back:");
-         all_attr_off(win);
-         mvwprintw(win, 3, 4, "%s", deck->items[index].back);
-         wattron(win, A_BOLD);
-         mvwprintw(win, CARD_HEIGHT - 2, 2, "[Y] Correct [N] Incorrect [ESC] Quit");
-         all_attr_off(win);
-      }
-      wrefresh(win);
+   while(1) {
+      const char* footer = (state == SHOW_FRONT)
+         ? "[SPACE] Flip Card [ESC] Quit"
+         : "[Y] Correct [N] Incorrect [ESC] Quit";
+
+      render_card(win, deck, index, state, footer);
 
       ch = wgetch(win);
       switch(ch) {

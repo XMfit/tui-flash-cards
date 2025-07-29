@@ -31,11 +31,12 @@ int main() {
    // Main loop for user interaction
    int running = 1;
    while (running) {
-      int choice = draw_menu(menu_win, MAIN_MENU_Y, MAIN_MENU_X, main_menu_choices, 4, "Main Menu");
+      int choice = draw_menu(menu_win, main_menu_choices, 4, "Main Menu");
       char input1[MAX_BUFFER];
       char input2[MAX_BUFFER];
       Deck decks = {0};
       DeckInfoList deck_info = {0};
+
       switch(choice) {
          case 0: { // create deck
             form_input(stdscr, DECKC_PROMPT, input1, MAX_BUFFER, 1);
@@ -54,8 +55,10 @@ int main() {
                free_deck_list(&deck_info);
                break;
             }
+
             int deck_id = show_deck_info(stdscr, &deck_info);
             free_deck_list(&deck_info);
+
             if (deck_id > 0)
                deck_wizard(menu_win, deck_id);
             break;
@@ -66,6 +69,7 @@ int main() {
                perrorw("Enter valid deck name");
                continue;
             }
+
             delete_deck_by_name(db, input1);
             perrorw("Deck deleted");
             break;
@@ -93,7 +97,7 @@ void deck_wizard(WINDOW* deck_win, const int deck_id) {
    snprintf(title, MAX_BUFFER, "Deck Manager - %s", deck.deck_name);
 
    while (running) {
-      int choice = draw_menu(deck_win, MAIN_MENU_Y, MAIN_MENU_X, deck_actions_menu_choices, 5, title);
+      int choice = draw_menu(deck_win, deck_actions_menu_choices, 5, title);
       load_deck_cards(db, deck_id, &deck);
       char input1[MAX_BUFFER];
       char input2[MAX_BUFFER];

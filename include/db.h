@@ -50,86 +50,123 @@ typedef struct {
 } DeckInfoList;
 
 /*
-* Brief - Create sqlite database
-* Input - Reference to sqlite3 pointer
+* Brief - Initialize and create SQLite database connection
+* Input - Pointer to sqlite3* database handle (output parameter)
+* Output - None (assumes error handling inside)
 */
 void setup_database(sqlite3** db);
 
 /*
-* Brief - Verify if deck exists by deck_name, and sets deck id if passed
-* Input - sqlite3* db, deck_name, and pointer to deck id
-* Output - Flag specifying if deck exists or not
+* Brief - Check if a deck exists by name and optionally retrieve its ID
+* Input - db: SQLite database handle
+*         deck_name: name of the deck to check
+*         deck_id: pointer to int to store deck ID if found (can be NULL)
+* Output - Returns 1 if deck exists, 0 otherwise
 */
 int deck_exists(sqlite3* db, const char* deck_name, int* deck_id);
 
 /*
-* Brief - Load all deck information into DeckInfoList structure 
-* Input - database pointer, DeckInfoList struct pointer
-*/ 
+* Brief - Load all deck metadata into a DeckInfoList structure
+* Input - db: SQLite database handle
+*         list: pointer to DeckInfoList struct to populate
+* Output - None (assumes list is initialized/empty)
+*/
 void load_deck_list(sqlite3* db, DeckInfoList* list);
 
 /*
-* Brief - free DeckInfoList
+* Brief - Free memory allocated inside a DeckInfoList structure
+* Input - list: pointer to DeckInfoList to free
+* Output - None
 */
 void free_deck_list(DeckInfoList* list);
 
 /*
-* Brief - Load cards into deck by id
-* Input - Database pointer, deck_id, and a pointer to the Deck structure
+* Brief - Load all cards for a given deck ID into a Deck structure
+* Input - db: SQLite database handle
+*         deck_id: ID of the deck whose cards to load
+*         deck: pointer to Deck struct to populate
+* Output - None
 */
 void load_deck_cards(sqlite3* db, int deck_id, Deck* deck);
 
 /*
-* Brief - Reset the study flag on cards in a deck 
-* Input - Deck structure
+* Brief - Reset the study_flag on all cards in the Deck to 0 (not studied)
+* Input - deck: pointer to Deck whose cards will be reset
+* Output - None
 */
 void reset_study_flags(Deck* deck);
 
 /*
-* Brief - Free deck from memory 
-* Input - Deck structure 
+* Brief - Free all dynamically allocated memory inside a Deck structure
+* Input - deck: pointer to Deck to free
+* Output - None
 */
 void free_deck_cards(Deck* deck);
 
 /*
-* Brief - Add deck to deck table in database 
-* Input - Database pointer, and name of deck for table 
+* Brief - Insert a new deck into the database
+* Input - db: SQLite database handle
+*         deck_name: name of the deck to create
+* Output - None
 */
 void create_deck(sqlite3* db, char* deck_name);
 
 /*
-* Brief - Delete deck from table via its name 
-* Input - Database pointer, and name of deck to delete 
+* Brief - Delete a deck and its associated cards by deck name
+* Input - db: SQLite database handle
+*         deck_name: name of the deck to delete
+* Output - None
 */
 void delete_deck_by_name(sqlite3* db, char* deck_name);
 
 /*
-* Brief - Delete deck from table via its ID 
-* Input - Database pointer, and id of deck 
+* Brief - Delete a deck and its associated cards by deck ID
+* Input - db: SQLite database handle
+*         deck_id: ID of the deck to delete
+* Output - None
 */
 void delete_deck_by_id(sqlite3* db, int deck_id);
 
 /*
-* Brief - Add card to the card table in the database 
-* Input - Database pointer, id of deck, front and back text of card 
+* Brief - Add a card to the database under a specific deck
+* Input - db: SQLite database handle
+*         deck_id: ID of the deck to add card to
+*         front: front text of the card
+*         back: back text of the card
+* Output - None
 */
 void add_card(sqlite3* db, int deck_id, const char* front, const char* back);
 
 /*
-* Brief - Delete card from database by ID 
-* Input - Database pointer, id of card
+* Brief - Delete a card from the database by card ID
+* Input - db: SQLite database handle
+*         card_id: ID of the card to delete
+* Output - None
 */
 void delete_card_by_id(sqlite3* db, int card_id);
 
 /*
-* Brief - Update card in the database 
-* Input - Database pointer, id of card, front and back text of card
+* Brief - Update the front and back text of a card by card ID
+* Input - db: SQLite database handle
+*         card_id: ID of the card to update
+*         new_front: new front text
+*         new_back: new back text
+* Output - None
 */
 void update_card(sqlite3* db, int card_id, const char* new_front, const char* new_back);
 
-// extra util functions
+/*
+* Brief - Remove newline character from a string, if present
+* Input - str: string to sanitize (modified in place)
+* Output - None
+*/
 void remove_newline(char* str);
+
+/*
+* Brief - Convert a string to lowercase in-place
+* Input - str: string to convert
+* Output - None
+*/
 void to_lowercase(char* str);
 
 #endif
-

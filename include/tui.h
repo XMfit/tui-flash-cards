@@ -47,83 +47,117 @@
                      A_BLINK | A_DIM | A_BOLD | A_PROTECT | A_INVIS | \
                      A_ALTCHARSET | A_CHARTEXT)
 
-int draw_menu(WINDOW* win, int starty, int startx, const char** choices, int n_choices, const char* title);
+/*
+* Brief - Draw a menu of choices in the given window, allowing user to navigate and select an option.
+* Input - win: window to draw menu in,
+*         choices: array of string choices,
+*         n_choices: number of choices,
+*         title: menu title string
+* Output - Index of selected choice, or -1 if user cancels (ESC)
+*/
+int draw_menu(WINDOW* win, const char** choices, int n_choices, const char* title);
 
 /*
-* Brief - This function calculates the maximum amount of characters the longest formatted line is
-* Input - structure containing DeckInfoList
-* Output - length n
+* Brief - Calculate the maximum length of formatted lines describing each deck in DeckInfoList.
+* Input - Pointer to DeckInfoList structure containing deck info items.
+* Output - Integer representing the max line width needed for display.
 */
 int calc_max_line_width(const DeckInfoList* info);
 
 /*
-* Brief - This function displays each deck and its info to the user in a window and allows them to select 
-* the deck via the keypad
-* Input - parent window (usually stdscr) and DeckInfoList
-* Output - ID of the selected Deck
+* Brief - Display deck information in a window, allow user to navigate and select a deck.
+* Input - parent: parent window (usually stdscr),
+*         info: pointer to DeckInfoList containing decks to display
+* Output - ID of the selected deck, or -1 if cancelled.
 */
 int show_deck_info(WINDOW* parent, DeckInfoList* info);
 
 /*
-* Brief - Function to display cards in a window
-* Input - Parent window, Deck structure
+* Brief - Display all cards of a deck in the given window.
+* Input - parent: window to draw cards in,
+*         deck: pointer to Deck structure containing cards
+* Output - None
 */
 void display_cards(WINDOW* parent, Deck* deck);
 
 /*
-* Brief - Function to display cards in a window, and allow the user to study them 
-* Input - Parent window, Deck structure 
+* Brief - Allow user to study the cards in the deck interactively.
+* Input - parent: window to draw study interface,
+*         deck: pointer to Deck structure containing cards
+* Output - None
 */
 void study_cards(WINDOW* parent, Deck* deck);
 
 /*
-* Brief - Interactive input line allowing users to type their input, and use the keypads to move the 
-* cursor
-* Input - Window win thats calling it, y & x cords specifying where to start input line in window,
-* buffer to save line in, length of buffer, size of input box
+* Brief - Interactive input line with cursor navigation and editing features.
+* Input - win: window where input is received,
+*         y, x: starting coordinates within the window,
+*         buffer: buffer to store user input,
+*         max_len: max buffer length,
+*         visible_width: width of input box displayed,
+*         dash_flag: flag to control behavior (e.g., allow dashes)
+* Output - Number of characters entered or -1 on error.
 */
 int get_input_line(WINDOW* win, int y, int x, char* buffer, int max_len, int visible_width, int dash_flag);
 
 /*
-* Brief - Create a window centered and below the parent 
-* Input - Parent window, height and width of new window 
-* Output - pointer to new window
-*/ 
+* Brief - Create a new window centered relative to the parent window.
+* Input - parent: parent window to center relative to,
+*         height: height of new window,
+*         width: width of new window
+* Output - Pointer to the newly created centered window.
+*/
 WINDOW* create_centered_window(WINDOW* parent, int height, int width);
 
 /*
-* Brief - Clear and destroy window 
-* Input - Window to destroy and clear 
-* Output - 
+* Brief - Erase contents and destroy the specified window safely.
+* Input - win: window to clear and destroy
+* Output - None
 */
 void clear_and_destroy_window(WINDOW* win);
 
 /*
-* Brief - Create input prompt from parent window 
-* Input - Parent window, prompt for form, input buffer, buffer size
+* Brief - Display a prompt and get user input within a form interface.
+* Input - parent_win: parent window for the prompt,
+*         form_prompt: prompt message string,
+*         input: buffer to store user input,
+*         max_len: max length of input buffer,
+*         dash_flag: flag to control input behavior (e.g., allow dashes)
+* Output - None
 */
 void form_input(WINDOW* parent_win, const char* form_prompt, char* input, int max_len, int dash_flag);
 
 /*
-* See above just include second input buffer
+* Brief - Similar to form_input but accepts two separate input buffers (e.g. for question and answer).
+* Input - parent_win: parent window for the prompt,
+*         form_prompt: prompt message string,
+*         input1: first input buffer,
+*         input2: second input buffer,
+*         max_len: max length for both buffers
+* Output - None
 */
 void card_input(WINDOW* parent_win, const char* form_prompt, char* input1, char* input2, int max_len);
 
 /*
-* Brief - Create popup window displaying message 
-* Input - Parent window, message to display 
+* Brief - Create and display a popup window showing a message.
+* Input - parent_win: parent window for centering popup,
+*         message: message string to display
+* Output - None
 */
 void popup_message(WINDOW * parent_win, const char* message);
 
 /*
-* Brief - Display error message bottom left of terminal
-* Input - Error message 
+* Brief - Display an error message at the bottom-left corner of the terminal.
+* Input - err_msg: error message string
+* Output - None
 */
 void perrorw(const char* err_msg);
 
 /*
-* Turn off attributes
-*/ 
+* Brief - Disable all text attributes (e.g. bold, underline, reverse) on the given window.
+* Input - win: window to clear attributes from
+* Output - None
+*/
 void all_attr_off(WINDOW* win);
 
 #endif
